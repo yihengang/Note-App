@@ -32,12 +32,24 @@ const App = () => {
     });
   }, []);
 
+  useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem("loggedNoteappUser");
+    if (loggedUserJSON) {
+      const user = JSON.parse(loggedUserJSON);
+      setUser(user);
+      noteService.setToken(user.token);
+    }
+  }, []);
+
   const handleLogin = async (event) => {
     event.preventDefault();
 
     try {
       const user = await loginService.login({ username, password });
-      setUser(user);
+
+      window.localStorage.setItem("loggedNoteappUser", JSON.stringify(user));
+      noteService.setToken(user.token);
+      setUser(user); //user now consists of token, username and name
       setUsername("");
       setPassword("");
     } catch (exception) {
@@ -89,7 +101,7 @@ const App = () => {
       });
   };
 
-  const loginForm = () => {
+  const loginForm = () => (
     <form onSubmit={handleLogin}>
       <div>
         username
@@ -110,15 +122,15 @@ const App = () => {
         />
       </div>
       <button type="submit">login</button>
-    </form>;
-  };
+    </form>
+  );
 
-  const noteForm = () => {
+  const noteForm = () => (
     <form onSubmit={addNote}>
       <input value={newNote} onChange={handleNoteChange} />
       <button type="submit">save</button>
-    </form>;
-  };
+    </form>
+  );
 
   return (
     <div>
@@ -134,24 +146,26 @@ const App = () => {
           {noteForm()}
         </div>
       )}
-
-      <div>
-        <button onClick={() => setShowAll(!showAll)}>
-          Show {showAll ? "Important" : "All"}
-        </button>
-      </div>
-      <ul>
-        <ul>
-          {notesToShow.map((note) => (
-            <Note
-              key={note.id}
-              note={note}
-              toggleImportance={() => toggleImportanceOf(note.id)}
-            />
-          ))}
-        </ul>
-      </ul>
-
+      {user && (
+        <>
+          <div>
+            <button onClick={() => setShowAll(!showAll)}>
+              Show {showAll ? "Important" : "All"}
+            </button>
+          </div>
+          <ul>
+            <ul>
+              {notesToShow.map((note) => (
+                <Note
+                  key={note.id}
+                  note={note}
+                  toggleImportance={() => toggleImportanceOf(note.id)}
+                />
+              ))}
+            </ul>
+          </ul>
+        </>
+      )}
       <Footer />
     </div>
   );
